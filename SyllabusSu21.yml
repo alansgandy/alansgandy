@@ -1,0 +1,1472 @@
+metadata:
+  short title: Syllabus
+  title: Syllabus
+  subtitle: Summer 21
+  authors:
+    - name: Alan Gandy
+      organization: Lone Star College, University Park
+  revision_date: 4-28-2021
+  required privileges:
+    - admin
+    - developer
+    - advocate
+    - user
+    - customer
+    - trainer
+---
+features:
+  debug: False
+  css: https://hsldocassemble.s3-us-west-1.amazonaws.com/assets/docassemble_global_reveal_banner.css
+  navigation: False
+  progress bar: True
+  question back button: False
+  navigation back button: False
+  continue button label: Save & Continue
+  centered: True
+  cache documents: False
+---
+modules:
+  - .course_from_json
+---
+objects:
+  - selected_course: Course.using(course_name=selected_course_name)
+---
+initial: true
+code: |
+  if user_logged_in():
+    if not defined('instructor_email'):
+      instructor_email = user_info().email
+  else:
+    user_must_log_in
+---
+event: user_must_log_in
+question: |
+  In order to use this interview,
+  you need to log in.
+subquestion: |
+  If you have not yet created an
+  account, press register.
+buttons:
+  Register: register
+  Log in: signin
+prevent going back: True
+---
+mandatory: True
+code: |
+  set_live_help_status(availability='available', mode='help', partner_roles=['admin'])
+---
+id: select_course
+mandatory: True
+question: |
+  Please input and select your course rubric and number *(example: ITSC1301).* 
+right: |
+  A blank syllabus can be selected, (one without any course info,) by choosing 'BLANK'.
+fields:
+  - Course: selected_course_name
+    input type: ajax
+    action: wordlist
+under: |
+      Course choices appear after four characters are input. If your course does not appear in the list, contact alan.s.gandy@lonestar.edu . 
+help:
+  heading: Course Selection
+  content: |
+    The user should input the first four characters of a course, (commonly known as the rubric,) into the text field. For example, 'ACCT' will present the user with a suggested list of courses with that rubric. The user can click to select the course form the available choices.
+    If your course does not appear in the list, contact alan.s.gandy@lonestar.edu .
+---
+event: wordlist
+code: |
+  (filename_a, mimetype_a) = path_and_mimetype('data/sources/course_listSu21.txt')
+  set_save_status('ignore')
+  wordstart = action_argument('wordstart').lower()
+  results = list()
+
+  import codecs
+  with codecs.open(filename_a, 'r', 'utf-8') as words_file:
+    for line in words_file:
+      lower_line = line.lower()
+      if lower_line.startswith(wordstart):
+        results.append(line.rstrip())
+  json_response(results)
+---
+mandatory: True
+code: |
+  menu_items = [ action_menu_item('Review Answers', 'review_answers') ]
+---
+id: course_info
+mandatory: True
+question: |
+  ${ selected_course } ${ selected_course.title }
+subquestion: |
+  **Catalog Information:**
+right: |
+  Please review and update fields, as necessary.
+  NOTE - Some catalog data may be corrupted or missing. Please compare with
+  [current catalog](https://www.lonestar.edu/catalog/#/courses)
+fields:
+  - Description: selected_course.description
+    datatype: area
+    rows: 10
+    default: ${ selected_course.description }
+    required: False
+  - Prerequisite: selected_course.prerequisite
+    datatype: area
+    rows: 2
+    default: ${ selected_course.prerequisite }
+    required: False
+  - Corequisite: selected_course.corequisite
+    datatype: area
+    rows: 2
+    default: ${ selected_course.corequisite }
+    required: False
+  - Units: selected_course.units
+    datatype: text
+    default: ${ selected_course.units }
+    required: False
+  - Lecture Hours: selected_course.lecture
+    datatype: text
+    default: ${ selected_course.lecture }
+    required: False
+  - Lab Hours: selected_course.lab
+    datatype: text
+    default: ${ selected_course.lab }
+    required: False
+  - External Hours: selected_course.external
+    datatype: text
+    default: ${ selected_course.external }
+    required: False
+  - Contact Hours: selected_course.contact
+    datatype: text
+    default: ${ selected_course.contact }
+    required: False
+  - Student Learning Outcomes: selected_course.outcomes
+    datatype: area
+    rows: 20
+    default: ${ selected_course.outcomes }
+    required: False
+    note: |
+      **CONFIRM THESE SLOs MATCH THE CURRENT CATALOG**
+  - Core Applicability: core_applicability
+    note: 'Please provide, if applicable. Leave blank, if not.'
+    datatype: area
+    rows: 10
+    default: ${ selected_course.core_category }
+    required: False
+help:
+  content: |
+    Each field is prepopulated with data from the currently published catalog.
+---
+mandatory: True
+code: |
+  set_parts(
+    title=selected_course)
+---
+id: division
+mandatory: True
+question: Please select your division.
+fields:
+  - Division: division
+    datatype: radio
+    choices:
+      - Business, Applied Sciences, Computing, and Engineering Technologies: Business, Applied Sciences, Computing, and Engineering Technologies
+      - Arts and Humanities: Arts and Humanities
+      - Math and Sciences: Math and Sciences
+      - Behavioral and Social Sciences: Behavioral and Social Sciences
+---
+id: department
+mandatory: True
+question: Please select your department.
+field: department
+choices:
+  code: department_choices
+---
+code: |
+  if division == 'Business, Applied Sciences, Computing, and Engineering Technologies':
+    department_choices = ['BUSI, C.I.T., ENGR, ELTE, MCHN, PTRT', 'ACCT, ECON, PHED']
+    dean = 'Dr. Steve Kahla, Steven.C.Kahla@lonestar.edu, 281-655-3788'
+  elif division == 'Arts and Humanities':
+    department_choices = ['ARTS, FOR. LANG.: ARAB, FREN, SPAN', 'ESOL, DEV. ENGL', 'ENGL', 'HUMA, PHIL, HIST', 'DANC, DRAM, MUAP, MUEN, MUSC, MUSI']
+    dean = 'Jonathan Anderson, Jonathan.Anderson@lonestar.edu, 281-401-5313'
+  elif division == 'Math and Sciences':
+    department_choices = ['BIOL & ENVR', 'CHEM, PHYS, & GEOL', 'Math']
+    dean = 'Dr. Jess Kelly, Jess.Kelly@lonestar.edu, 281-655-3789 '
+  else:
+    department_choices = ['PSYC, SOCI, SPCH, COMM', 'EDUC 1300, TECA', 'CJLE, CRIJ, GEOG, GOVT']
+    dean = '(interim) David Gaer, David.C.Gaer@lonestar.edu, 281-290-2663'
+
+  if department == 'BUSI, C.I.T., ENGR, ELTE, MCHN, PTRT':
+    chair = 'Gary Tucker, Gary.D.Tucker@lonestar.edu, 281-290-2957 | Office: UP13.868'
+  elif department == 'ACCT, ECON, PHED':
+    chair = 'David Wiederrecht, David.E.Wiederrecht@lonestar.edu, 281-290-2760 | Office: NRB.209P'
+  elif department == 'ARTS, FOR. LANG.: ARAB, FREN, SPAN':
+    chair = 'Amy Sluis, Amy.Sluis@lonestar.edu, 281-290-5047 | Office: UP13.867'
+  elif department == 'ENGL':
+    chair = 'Dr. Suzanne Weatherly, Suzanne.M.Weatherly@lonestar.edu, 281-290-3759 | Office: UP13.820'
+  elif department == 'ESOL, DEV. ENGL':
+    chair = 'Brian Reeves, Brian.L.Reeves@lonestar.edu, 281-290-3749 | Office: UP13.814'
+  elif department == 'HUMA, PHIL, HIST':
+    chair = 'Dr. Matthew Keyworth, Matthew.J.Keyworth@lonestar.edu, 281-290-5056'
+  elif department == 'DANC, DRAM, MUAP, MUEN, MUSC, MUSI':
+    chair = 'Dr. Aaron Alon, Aaron.Alon@lonestar.edu, 281-290-5009 | Office: UP12.110'
+  elif department == 'Math':
+    chair = 'Frank Rodriguez, Frank.M.Rodriguez@lonestar.edu, 281-290-3770'
+  elif department == 'BIOL & ENVR':
+    chair = 'Dr. Christopher Allen, Christopher.A.Allen@LoneStar.edu, 281-655-3873 | Office: CSI 208'
+  elif department == 'CHEM, PHYS, & GEOL':
+    chair = 'Dr. Heather Brasher, Heather.L.Brasher@LoneStar.edu, 281-290-2637 | Office: CSI.214'
+  elif department == 'EDUC 1300, TECA':
+    chair = 'Michael Donnelly, Michael.Donnelly@lonestar.edu, 281-290-3656 | Office: NRB.209 H'
+  elif department == 'PSYC, SOCI, SPCH, COMM':
+    chair = 'Sean Stewart, Sean.M.Stewart@lonestar.edu, 281-290-1854 | Office: B13.802'
+  elif department == 'CJLE, CRIJ, GEOG, GOVT':
+    chair = 'Matt Plank, Methias.W.Plank@lonestar.edu, 281-290-2741 | Office: B12.624'
+---
+id: division_department
+mandatory: True
+question: |
+  Division and Department
+subquestion: |
+  You selected Division: ${ division } and Department: ${ department }.
+
+  **Dean:** ${ dean }
+
+  **Department Chair:** ${ chair }
+buttons:
+  Save & Continue: continue
+---
+objects:
+  - required: DAList.using(object_type=DAObject, there_are_any=False)
+  - optional: DAList.using(object_type=DAObject, there_are_any=False)
+---
+code: required.complete_attribute = 'required_description'
+mandatory: True
+---
+question: Do you want to add any required material?
+yesno: required.there_are_any
+---
+id: required_info
+question: Required Material
+continue button label: Save & Continue
+fields:
+  - Required material description: 'required[i].required_description'
+    datatype: area
+    required: False
+  - Image (optional): 'required[i].required_image'
+    datatype: file
+    maximum image size: 200
+    accept: |
+      "image/jpeg, image/png"
+    required: False
+    note: |
+      Only jpeg or png image files are accepted. Uploaded images are resized to a maximum of 300 pixel height or width.
+help:
+  content: |
+    Required textbook or other material may be added here. Iamge files may be uploaded, (these are automatically resized to 300 pixel height - appropriate for a printed document.)
+    Optional books and material may be added on a later page.
+---
+question: Do you want to add another required material?
+yesno: required.there_is_another
+---
+event: 'required[i].review'
+question: Edit your entry
+review:
+  - Required material description: 'required[i].required_description'
+    button: '**Required material description**: ${ required[i].required_description }'
+  - Image (optional): 'required[i].required_image'
+    button: '**Image (optional)**: ${ required[i].required_image }'
+
+---
+code: required.remove(value(action_argument('item')))
+event: required_del
+---
+code: |-
+  required.appendObject()
+  required.reset_gathered()
+  required.there_is_another = False
+event: required_add
+---
+columns:
+  - Required material description: row_item.required_description
+  - Image (optional): row_item.required_image
+edit:
+  - required_description
+  - required_image
+rows: required
+table: required_table
+---
+id: required_table
+mandatory: True
+question: Please add any required materials.
+subquestion: |-
+  ${ required_table }
+  ${ required.add_action() }
+buttons:
+  Save & Continue: continue
+help:
+  content: |
+    See this video for some ideas on how to use this section for your course.
+    [YOUTUBE 0uhJKkmwGHc]
+---
+code: optional.complete_attribute = 'optional_description'
+mandatory: True
+---
+question: Do you want to add any optional material?
+yesno: optional.there_are_any
+---
+id: optional_info
+question: Optional Material
+fields:
+  - Optional Material description: 'optional[i].optional_description'
+    datatype: area
+    required: False
+  - Image (optional): 'optional[i].optional_image'
+    datatype: file
+    maximum image size: 200
+    accept: |
+      "image/jpeg, image/png"
+    required: False
+    note: |
+      Only jpeg or png image files are accepted. Uploaded images are resized to a maximum of 300 pixel height or width.
+---
+question: Do you want to add another optional material?
+yesno: optional.there_is_another
+---
+event: 'optional[i].review'
+question: Edit your entry
+review:
+  - Optional Material description: 'optional[i].optional_description'
+    button: '**Optional Material description**: ${ optional[i].optional_description }'
+  - Image (optional): 'optional[i].optional_image'
+    button: '**Image (optional)**: ${ optional[i].optional_image }'
+---
+code: optional.remove(value(action_argument('item')))
+event: optional_del
+---
+code: |-
+  optional.appendObject()
+  optional.reset_gathered()
+  optional.there_is_another = False
+event: optional_add
+---
+columns:
+  - Optional Material description: row_item.optional_description
+  - Image (optional): row_item.optional_image
+edit:
+  - optional_description
+  - optional_image
+rows: optional
+table: optional_table
+---
+id: optional_table
+mandatory: True
+question: Please add any optional materials.
+subquestion: |-
+  ${ optional_table }
+  ${ optional.add_action() }
+buttons:
+  Save & Continue: continue
+help:
+  content: |
+    See this video for some ideas on how to use this section for your course.
+    [YOUTUBE 0uhJKkmwGHc]
+---
+objects:
+  - grade_determination: DAList.using(object_type=DAObject, there_are_any=False)
+---
+code: grade_determination.complete_attribute = 'grade_category'
+mandatory: True
+---
+id: assessment
+mandatory: True
+question: Assessment and Grade Determination.
+subquestion: |
+  In this next section, you can provide information regarding course assignments and grading.
+  The information will be appear on the document, like the example below.
+
+
+  ![Example of Grade Determination table](https://i.imgur.com/htPrpBn.png)
+
+field: grade_determination.there_are_any
+buttons:
+  - Continue: yes
+help:
+  content: |
+    See this video for some ideas on how to use this section for your course.
+    [YOUTUBE xvl9rD9ioHA]
+---
+id: assessment_detail
+question: Assessment and Evaluation
+subquestion: |
+  Please provide information about how the student will be assessed and how the grade will be calculated.
+  The *Details* field appears as a paragraph on the generated syllabus.
+  The *Summary* field presents abbreviated information in a table on the generated syllabus.
+continue button label: Save & Continue
+fields:
+  - Assessment Category: 'grade_determination[i].grade_category'
+    datatype: area
+    rows: 1
+    required: False
+    hint: Mid-term Exam, Homework, Lab Reports, etc.
+  - Summary: 'grade_determination[i].grade_summary'
+    datatype: area
+    rows: 2
+    required: False
+    hint: Exam covers chapters 1 - 5, end of chapter review questions, etc.
+  - Details: 'grade_determination[i].grade_detail'
+    datatype: area
+    rows: 4
+    required: False
+    note: Use this area for adding more specific information. (This text appears above the Grade Determination table.)
+  - Points (if applicable): 'grade_determination[i].grade_points'
+    datatype: number
+    required: False
+  - Percent of Final Average: 'grade_determination[i].grade_percentage'
+    datatype: number
+    required: False
+list collect: True
+help:
+  content: |
+    See this video for some ideas on how to use this section for your course.
+    [YOUTUBE xvl9rD9ioHA]
+---
+question: Add another assessment item?
+yesno: grade_determination.there_is_another
+subquestion: |-
+    Current Grade Determination Table
+    ${ grade_determination_table }
+---
+event: 'grade_determination[i].review'
+question: Edit your entry
+review:
+  - Your grade will be determined by the following: 'grade_determination[i].grade_category'
+    datatype: text
+  - Summary: 'grade_determination[i].summary'
+    datatype: area
+  - Details: 'grade_determination[i].grade_detail'
+    datatype: area
+  - Points (if applicable): 'grade_determination[i].grade_points'
+    datatype: number
+  - Percent of Final Average: 'grade_determination[i].grade_percentage'
+    datatype: number
+---
+code: grade_determination.remove(value(action_argument('item')))
+event: grade_determination_del
+---
+code: |-
+  grade_determination.appendObject()
+  grade_determination.reset_gathered()
+  grade_determination.there_is_another = False
+  grade_determination.there_are_any = False
+event: grade_determination_add
+---
+columns:
+  - Your grade will be determined by the following: row_item.grade_category
+  - Summary: row_item.grade_summary
+  - Details: row_item.grade_detail
+  - Points (if applicable): row_item.grade_points
+  - Percent of Final Average: row_item.grade_percentage
+
+edit:
+  - grade_category
+  - grade_summary
+  - grade_detail
+  - grade_points
+  - grade_percentage
+
+rows: grade_determination
+table: grade_determination_table
+allow reordering: True
+---
+id: assessment_review
+mandatory: True
+question: Please review your entries
+subquestion: |-
+  ${ grade_determination_table }
+  ${ grade_determination.add_action() }
+buttons:
+  Save & Continue: continue
+help:
+  content: |
+    See this video for some ideas on how to use this section for your course.
+    [YOUTUBE xvl9rD9ioHA]
+---
+mandatory: True
+code: |
+  if not defined('selected_course.ip'):
+    define('selected_course.ip', False)
+---
+mandatory: True
+reconsider: True
+code: |
+  point_sum = sum(item.grade_points for item in grade_determination)
+  percent_sum = sum(item.grade_percentage for item in grade_determination)
+---
+id: grade_scale
+mandatory: True
+question: |
+  Grading Scale
+subquestion: |
+  Please edit the letter grade range as neccessary.
+right: |
+  **Total Assessment Points=** ${ point_sum }
+  **Total Assessment Percentge=** ${ percent_sum }
+fields:
+  - A (percent): a_letter_grade
+    default: 90 - 100
+    required: False
+  - A (points): a_points
+    required: False
+  - B: b_letter_grade
+    default: 80 - 89
+    required: False
+  - B (points): b_points
+    required: False
+  - C: c_letter_grade
+    default: 70 - 79
+    required: False
+  - C (points): c_points
+    required: False
+  - D/IP: d_letter_grade
+    default: 60 - 69
+    required: False
+    show if:
+      code: |
+        selected_course.ip == "True"
+  - D/IP (points): d_points
+    required: False
+    show if:
+      code: |
+        selected_course.ip == "True"
+  - D: d_letter_grade
+    default: 60 - 69
+    required: False
+    hide if:
+      code: |
+        selected_course.ip == "True"
+  - D (points): d_points
+    required: False
+    hide if:
+      code: |
+        selected_course.ip == "True"
+  - F: f_letter_grade
+    default: < 60
+    required: False
+  - F (points): f_points
+    required: False
+---
+id: instructor_info
+mandatory: True
+question: |
+  Please provide information about yourself.
+fields:
+  - Name: instructor_name
+    hint: First Last and any title or credentials
+    required: False
+  - Email: instructor_email
+    hint: e.g., instructor@lonestar.edu
+    datatype: email
+    required: False
+  - Phone: instructor_phone
+    hint: e.g., (555)555-1212
+    required: False
+    note: |
+      Don't give out your mobile phone number.
+      [Get a Google Voice number here](https://support.google.com/voice/answer/115061?hl=en)
+  - Website / Other Contact: other_contact
+    hint: http://blog.instructor.com
+    datatype: area
+    rows: 2
+    required: False
+  - Office Location: instructor_office
+    datatype: area
+    rows: 2
+    hint: e.g., Bldg. 13 / 801
+    required: False
+  - Office/Student Hours: instructor_hours
+    hint: e.g., Monday / Wednesday 10 - 1
+    datatype: area
+    rows: 2
+    help: This field is required. If regular office hours are not available, please input "By Appointment"
+    required: False
+---
+id: section_info
+mandatory: True
+question: |
+  Section details for ${ selected_course } ${ selected_course.title }
+fields:
+  - Section Number(s): section_number
+    hint: e.g., 6001 or 6001 / 6002
+    required: False
+  - Classroom Location: classroom_location
+    help: |
+      For an online course, you may input "Brightspace" or "Virtual"
+    hint: e.g., Bldg. 12 / 401
+    required: False
+  - Labroom Location: labroom_location
+    help: |
+      For an online course, you may input "Brightspace" or "Virtual"
+    hint: e.g., Bldg. 12 / 401
+    required: False
+  - Semester and Year: semester
+    hint: e.g., Fall 2020
+    required: False
+  - Class Days and Times: days_times
+    datatype: area
+    rows: 2
+    help: |
+      For an online course, you may input "Online Course - no scheduled days" or something similar.
+    hint: e.g., Tuesdays / Thursdays 10 - 10:50
+    required: False
+---
+mandatory: True
+code: |
+  set_parts(
+    subtitle=section_number)
+---
+modules:
+  - .dates
+---
+objects:
+  - activities: DAList.using(object_type=DAObject, there_is_another=False)
+---
+id: course_dates_select
+mandatory: True
+question: Please select your course session and dates.
+fields:
+  - Session: session
+    datatype: radio
+    choices:
+     - "Regular Academic Session: 6/7/21 - 8/22/21": 1
+     - "10 Week Session 1: 5/17/21 - 7/25/21": 10A
+     - "10 Week Session 2: 6/7/21 - 8/15/21": 10B
+     - "11 Wk Wkend Session: 6/11/21 - 8/22/21": 11K
+     - "12 Week Session 1: 5/17/21 - 8/8/21": 12A
+     - "3 Week Mini Session: 5/17/21 - 6/6/21": 3M
+     - "3 Week Session 2: 6/7/21 - 6/27/21": 3W2
+     - "3 Week Session 3: 7/19/21 - 8/8/21": 3W3
+     - "3 Week Session 4: 8/2/21 - 8/22/21": 3W4
+     - "4 Week Mini Session: 5/17/21 - 6/13/21": 4M
+     - "4 Week Session 2: 6/7/21 - 7/4/21": 4W2
+     - "4 Week Session 3: 7/26/21 - 8/22/21": 4W3
+     - "5 Week Session 1: 5/31/21 - 7/4/21": 5W1
+     - "5 Week Session 2: 6/14/21 - 7/18/21": 5W2
+     - "5 Week Session 3: 7/19/21 - 8/22/21": 5W3
+     - "6 Week Session 1: 6/7/21 - 7/13/21": 6W1
+     - "6 Week Session 2: 7/15/21 - 8/22/21": 6W2
+     - "6 Week Session 3: 5/17/21 - 6/27/21": 6W3
+     - "6 Week Session 4: 6/28/21 - 8/8/21": 6W4
+     - "8 Week Session 1: 5/24/21 - 7/13/21": 8W1
+     - "8 Week Session 2: 6/7/21 - 8/1/21": 8W2
+     - "8 Week Session 3: 6/28/21 - 8/22/21": 8W3
+help:
+  content: |
+    See this video for some ideas on how to use this section for your course.
+    [YOUTUBE iYlIMmabT9M]
+continue button label: Save & Continue
+---
+reconsider: True
+code: |
+  if session == '1':
+    start_date = '6/7/21'
+    end_date = '8/22/21'
+    official_day = '6/14/21'
+    withdrawal_day = '7/29/21'
+    multiplier = '1'
+  elif session == '10A':
+    start_date = '5/17/21'
+    end_date = '7/25/21'
+    official_day = '5/24/21'
+    withdrawal_day = '7/6/21'
+    multiplier = '10'
+  elif session == '10B':
+    start_date = '6/7/21'
+    end_date = '8/15/21'
+    official_day = '6/14/21'
+    withdrawal_day = '7/26/21'
+    multiplier = '10'
+  elif session == '11K':
+    start_date = '6/11/21'
+    end_date = '8/22/21'
+    official_day = '6/21/21'
+    withdrawal_day = '8/2/21'
+    multiplier = '11'
+  elif session == '12A':
+    start_date = '5/17/21'
+    end_date = '8/8/21'
+    official_day = '5/25/21'
+    withdrawal_day = '7/15/21'
+    multiplier = '12'
+  elif session == '3M':
+    start_date = '5/17/21'
+    end_date = '6/6/21'
+    official_day = '5/18/21'
+    withdrawal_day = '5/28/21'
+    multiplier = '3'
+  elif session == '3W2':
+    start_date = '6/7/21'
+    end_date = '6/27/21'
+    official_day = '6/8/21'
+    withdrawal_day = '6/21/21'
+    multiplier = '3'
+  elif session == '3W3':
+    start_date = '7/19/21'
+    end_date = '8/8/21'
+    official_day = '7/20/21'
+    withdrawal_day = '8/3/21'
+    multiplier = '3'
+  elif session == '3W4':
+    start_date = '8/2/21'
+    end_date = '8/22/21'
+    official_day = '8/3/21'
+    withdrawal_day = '8/17/21'
+    multiplier = '3'
+  elif session == '4M':
+    start_date = '5/17/21'
+    end_date = '6/13/21'
+    official_day = '5/19/21'
+    withdrawal_day = '6/8/21'
+    multiplier = '4'
+  elif session == '4W2':
+    start_date = '6/7/21'
+    end_date = '7/4/21'
+    official_day = '6/9/21'
+    withdrawal_day = '6/29/21'
+    multiplier = '4'
+  elif session == '4W3':
+    start_date = '7/26/21'
+    end_date = '8/22/21'
+    official_day = '7/28/21'
+    withdrawal_day = '8/17/21'
+    multiplier = '4'
+  elif session == '5W1':
+    start_date = '5/31/21'
+    end_date = '7/4/21'
+    official_day = '6/3/21'
+    withdrawal_day = '6/23/21'
+    multiplier = '5'
+  elif session == '5W2':
+    start_date = '6/14/21'
+    end_date = '7/18/21'
+    official_day = '6/17/21'
+    withdrawal_day = '7/7/21'
+    multiplier = '5'
+  elif session == '5W3':
+    start_date = '7/19/21'
+    end_date = '8/22/21'
+    official_day = '7/22/21'
+    withdrawal_day = '8/11/21'
+    multiplier = '5'
+  elif session == '6W1':
+    start_date = '6/7/21'
+    end_date = '7/13/21'
+    official_day = '6/10/21'
+    withdrawal_day = '7/1/21'
+    multiplier = '6'
+  elif session == '6W2':
+    start_date = '7/15/21'
+    end_date = '8/22/21'
+    official_day = '7/19/21'
+    withdrawal_day = '8/10/21'
+    multiplier = '6'
+  elif session == '6W3':
+    start_date = '5/17/21'
+    end_date = '6/27/21'
+    official_day = '5/20/21'
+    withdrawal_day = '6/15/21'
+    multiplier = '6'
+  elif session == '6W4':
+    start_date = '6/28/21'
+    end_date = '8/8/21'
+    official_day = '7/1/21'
+    withdrawal_day = '7/27/21'
+    multiplier = '6'
+  elif session == '8W1':
+    start_date = '5/24/21'
+    end_date = '7/13/21'
+    official_day = '6/1/21'
+    withdrawal_day = '6/29/21'
+    multiplier = '8'
+  elif session == '8W2':
+    start_date = '6/7/21'
+    end_date = '8/1/21'
+    official_day = '6/14/21'
+    withdrawal_day = '7/15/21'
+    multiplier = '8'
+  elif session == '8W3':
+    start_date = '6/28/21'
+    end_date = '8/22/21'
+    official_day = '7/6/21'
+    withdrawal_day = '8/5/21'
+    multiplier = '8'
+  else:
+    start_date = 'NEED TO DEFINE'
+    end_date = 'NEED TO DEFINE'
+    official_day = 'NEED TO DEFINE'
+    withdrawal_day = 'NEED TO DEFINE'
+---
+mandatory: True
+continue button label: Save & Continue
+question: |
+  Select the days your class meets each week.
+subquestion: |
+  Or, select a single day if you prefer a weekly schedule, (best for online courses.)
+fields:
+  - Check for each day: select_days
+    datatype: checkboxes
+    choices:
+     - Monday
+     - Tuesday
+     - Wednesday
+     - Thursday
+     - Friday
+     - Saturday
+     - Sunday
+    none of the above: False
+    required: False
+Right: |
+      The selected days are used to create a table with your scheduled actvities and assignments.
+      (If you only wish to use a weekly schedule, then just select a day for your week to start.)
+---
+reconsider: True
+code: |
+   meet_days = []
+   if select_days['Monday']:
+     meet_days.append(1)
+   if select_days['Tuesday']:
+     meet_days.append(2)
+   if select_days['Wednesday']:
+     meet_days.append(3)
+   if select_days['Thursday']:
+     meet_days.append(4)
+   if select_days['Friday']:
+     meet_days.append(5)
+   if select_days['Saturday']:
+     meet_days.append(6)
+   if select_days['Sunday']:
+     meet_days.append(7)
+---
+code: |
+   new_activity = activities.clear()
+   for event_date in get_dates(start_date, end_date, meet_days):
+     new_activity = activities.appendObject()
+     new_activity.date = event_date
+     new_activity.description = ""
+     new_activity.assignment = ""
+   activities.there_are_any = False
+---
+event: generate_dates
+code: |
+   new_activity = activities.clear()
+   for event_date in get_dates(start_date, end_date, meet_days):
+     new_activity = activities.appendObject()
+     new_activity.date = event_date
+     new_activity.description = ""
+     new_activity.assignment = ""
+   activities.there_are_any = False
+---
+id: meet_details
+question: |
+  Please provide info for the class meeting, topic, module or assignment.
+subquestion: |
+  Leave blank if you do not want to populate a course schedule of assignments.
+fields:
+  - Date: activities[i].date
+    datatype: string
+    note: |
+      You may edit this field, (to add week number, etc.)
+    required: False
+  - Description: activities[i].description
+    datatype: area
+    required: False
+  - Assignment: activities[i].assignment
+    datatype: area
+    required: False
+---
+table: activities_table
+rows: activities
+columns:
+  - Date: row_item.date
+  - Description: row_item.description
+  - Assignment: row_item.assignment
+edit:
+  - date
+  - description
+  - assignment
+allow reordering: True
+---
+id: meet_table
+mandatory: True
+question: |
+  Course meeting, topic or assignment schedule.
+subquestion: |
+  Click the edit button to add description for each date.
+  ${ activities_table }
+  ${ activities.add_action() }
+buttons:
+  Save & Continue: continue
+---
+field: activities.revisit
+question: |
+  Edit the activities
+subquestion: |
+  ${ activities_table }
+
+  ${ activities.add_action() }
+---
+code: |-
+  activities.appendObject()
+event: activities_add
+---
+id: policy_info
+mandatory: True
+question: Please select from the available example policies, or provide your own.
+subquestion: Additional policies can be added on an upcoming page.
+fields:
+  - Technology: mc_technology_policy
+    datatype: radio
+    choices:
+      - Access to a personal computer with a current, updated operating system. Chrome or Firefox web browser must be installed to complete course assignments.
+      - Online quizzes, online assignment submissions, Microsoft Word document submissions, discussion boards, etc.
+      - Add my own policy
+  - Custom Technology: mc_technology_policy
+    datatype: area
+    show if:
+      variable: mc_technology_policy
+      is: Add my own policy
+  - COVID Impact To Class Format (if there is a need to move online due to COVID-19): mc_covid_policy
+    datatype: radio
+    choices:
+      - Students will be expected to meet during the designated class time via Webex/Teams/Zoom each week. Students will be required to have a webcam for these meetings.
+      - The class will be held asynchronously online-only with no required class meetings, and the faculty member will be available for “student hours” as stated in the syllabus.
+      - Add my own policy
+  - Custom COVID Impact To Class Format (if there is a need to move online due to COVID-19): mc_covid_policy
+    datatype: area
+    show if:
+      variable: mc_covid_policy
+      is: Add my own policy
+  - Attendance: mc_attendance_policy
+    datatype: radio
+    choices:
+      - Regular attendance is expected in order for students to successfully complete the course objectives; this includes actively logging into the course.
+      - To successfully complete the course, your attendance is required. Showing up to class is not
+        enough to score a perfect attendance and participation grade; participation is required! Roll will be
+        taken; being more than 10 minutes late, you risk being counted absent and you will have missed a quiz.
+      - Add my own policy
+  - Custom Attendance: mc_attendance_policy
+    datatype: area
+    show if:
+      variable: mc_attendance_policy
+      is: Add my own policy
+  - Communication: mc_communication_policy
+    datatype: radio
+    choices:
+      - The best way to reach me is by email through D2L. You will generally get a response within 24-48 business hours. If you don't get a response within that timeframe, please email again.
+      - Please post any general questions related to the course content in the D2L discussion board so that all students can benefit from the responses. Personal concerns such as questions about grades or class performance should be sent by email. You will generally get a response within 24-48 business hours. If you don't get a response within that timeframe, please email again.
+      - Add my own policy
+  - Custom Communication: mc_communication_policy
+    datatype: area
+    show if:
+      variable: mc_communication_policy
+      is: Add my own policy
+  - Late Work: mc_late_policy
+    datatype: radio
+    choices:
+      - Late work is not accepted. Any assignment not submitted by the due date will receive a 0 grade, unless prior arrangements are approved by the instructor.
+      - Late work is accepted. Any assignment not submitted by the due date will receive a point deduction.
+      - Add my own policy
+  - Custom Late Work: mc_late_policy
+    datatype: area
+    show if:
+      variable: mc_late_policy
+      is: Add my own policy
+  - Make-up Assessments: mc_makeup_policy
+    datatype: radio
+    choices:
+      - Students must contact the instructor prior to missing a scheduled examination. An opportunity to take a makeup examination will be offered to those who make prior contact with the instructor.  All make-up exams will be administered in any Lone Star campus assessment center.
+      - Add my own policy
+  - Custom Make-up Assessments: mc_makeup_policy
+    datatype: area
+    show if:
+      variable: mc_makeup_policy
+      is: Add my own policy
+  - Phone and Computer: mc_phone_policy
+    datatype: radio
+    choices:
+      - Phones and computers are not permitted in class.
+      - Electronic devices are allowed, as long as you do not create a distraction to others.
+      - Add my own policy
+  - Custom Phone and Computer: mc_phone_policy
+    datatype: area
+    show if:
+      variable: mc_phone_policy
+      is: Add my own policy
+  - Official Day of Record: mc_official_day_policy
+    datatype: radio
+    choices:
+      - Students that have not attended an in-class meeting or participated in an online class prior to the official day of record will be dropped from the course without exception. Official day of record for this course is ${ official_day }.
+    note: |
+      This is the official policy. No edits should be made.
+  - Withdrawal: mc_withdrawal_policy
+    datatype: radio
+    choices:
+      - Withdrawal from the course after the official day of record and prior to “W” Day, ${ withdrawal_day } will result in a final grade of “W” on your transcript.  Instructor approval is necessary if you want to withdraw after official day.  No credit will be awarded for a course earning a “W.”  If you stop attending class, you must withdraw at the registration office prior to “W” day.  If you stop attending class and do not officially withdraw, you will receive an “F” for the course.
+      - No credit will be awarded for a course earning a “W.” If you stop attending class, you
+        must withdraw at the registration office prior to “W” day, ${ withdrawal_day }. If you stop attending class
+        and do not officially withdraw, you will receive an “F” for the course.
+      - Add my own policy
+  - Custom Withdrawal: mc_withdrawal_policy
+    datatype: area
+    show if:
+      variable: mc_withdrawal_policy
+      is: Add my own policy
+right: |
+
+  ${ selected_course } ${ selected_course.title }
+
+  **Official Day:** ${ official_day }
+
+  **Withdrawal Day:** ${ withdrawal_day }
+
+  You will have the opportunity to edit any of your selections on the next page.
+
+---
+id: edit_policy_info
+question: |
+  You may edit your selected policies, below.
+right: |
+
+  ${ selected_course } ${ selected_course.title }
+
+  **Official Day:** ${ official_day }
+
+  **Withdrawal Day:** ${ withdrawal_day }
+fields:
+  - Technology: technology_policy
+    datatype: area
+    default: ${ mc_technology_policy }
+  - COVID Impact To Class Format (in case a move to online is needed): covid_policy
+    datatype: area
+    default: ${ mc_covid_policy }
+  - Communication: communication_policy
+    datatype: area
+    default: ${ mc_communication_policy }
+  - Attendance: attendance_policy
+    datatype: area
+    default: ${ mc_attendance_policy }
+  - Late Work: late_policy
+    datatype: area
+    default: ${ mc_late_policy }
+  - Make-up Work: makeup_policy
+    datatype: area
+    default: ${ mc_makeup_policy }
+  - Phone and Computer: phone_policy
+    datatype: area
+    default: ${ mc_phone_policy }
+  - Official Day of Record: official_day_policy
+    datatype: area
+    default: ${ mc_official_day_policy }
+    note: |
+      This is the official policy. No edits should be made.
+  - Withdrawal: withdrawal_policy
+    datatype: area
+    default: ${ mc_withdrawal_policy }
+---
+id: review_policies
+mandatory: True
+question: |
+  Your selected and edited policies.
+subquestion: |
+  ###Technology
+    ${ technology_policy }
+
+  ###COVID Impact To Class Format
+  *If there is a need for the class to move to an online format due to COVID-19*
+
+    ${ covid_policy }
+
+  ###Attendance
+    ${ attendance_policy }
+
+  ###Communication
+    ${ communication_policy }
+
+  ###Late Work
+    ${ late_policy }
+
+  ###Make Up
+    ${ makeup_policy }
+
+  ###Phone and Computer
+    ${ phone_policy }
+
+  ###Official Day of Record
+    ${ official_day_policy }
+
+  ###Withdrawal
+    ${ withdrawal_policy }
+buttons:
+  Save & Continue: continue
+right: |
+
+  ${ selected_course } ${ selected_course.title }
+
+  **Official Day:** ${ official_day }
+
+  **Withdrawal Day:** ${ withdrawal_day }
+
+---
+objects:
+  - add_ins: DAList.using(object_type=DAObject)
+---
+mandatory: True
+code: |
+  if re.search("DANC", selected_course_name):
+    custom_policies = [
+    {"heading": "Events and Auditions:", "note": "Please visit https://lonestar.edu/UP-Events for a list of performing and visual art events on the Lone Star College-University Park campus. For theatre and music auditions, please visit https://lonestar.edu/UP-Auditions for information or to schedule an audition time. Visual & Performing Arts Website: Visit https://www.lonestar.edu/up-vpac to learn more about the performing and visual arts at Lone Star College-University Park."},
+    ]
+  elif re.search("DRAM", selected_course_name):
+    custom_policies = [
+    {"heading": "Events and Auditions:", "note": "Please visit https://lonestar.edu/UP-Events for a list of theatre, music, and visual art events on the Lone Star College-University Park campus.  For theatre and music auditions, please visit https://lonestar.edu/UP-Auditions for information or to schedule an audition time."},
+    {"heading": "Drama Website:", "note": "Visit https://lonestar.edu/up-vpac to learn more about the performing and visual arts at Lone Star College-University Park."}
+    ]
+  elif re.search("MUAP", selected_course_name):
+    custom_policies = [
+    {"heading": "Events and Auditions:", "note": "Please visit https://lonestar.edu/UP-Events  for a list of music, theatre, and visual art events on the Lone Star College-University Park campus. For music and theatre auditions, please visit https://lonestar.edu/UP-Auditions  for information or to schedule an audition time."},
+    {"heading": "Music Website:", "note": "Visit https://lonestar.edu/UPMusic  to learn more about the music department at Lone Star College-University Park."},
+    {"heading": "Degree Applicability:", "note": "MUAP x2xx classes count toward the AA in Music private lesson requirements. While one MUAP x1xx class may be used as an elective toward a degree, MUAP x1xx classes may not be used toward the private lesson requirements in the AA in Music."},
+    {"heading": "Music AA and Field of Study:", "note": "To see a complete list of courses that apply toward the Associate of Arts (AA) in Music and Field of Study in Music, please visit https://lonestar.edu/programs-of-study/associate-of-arts-music.htm . You can also find a one-page check list at https://lonestar.edu/music-dept-universitypark.htm . \nIt is recommended that you meet with the Department Chair (Dr. Aaron Alon: Aaron.Alon@lonestar.edu) to help you plan your courses if you are planning to pursue an associate or bachelor’s degree in music."},
+    {"heading": "Studio Classes, Juries, and Concerts:", "note": "All MUAPstudents must participate in an end-of-semester jury. MUAP students in MUAP x2xx classes must attend studio classes and must attend ten concerts on campus per semester. Options include ensemble performances, student or faculty recitals, music master classes, and weekly recital hours. Your teacher may also allow certain studio classes or other concerts to count for this requirement at his/her discretion. MUAP students in MUAP x1xx courses do not have these extra requirements for studio classes or concert attendance. Voice students can see a list of upcoming studio classes, juries, concerts, and recitals at https://lonestar.edu/31530.htm . Instrumental and composition students can see a list of upcoming studio classes, juries, concerts, and recitals at https://lonestar.edu/31713.htm ."},
+    {"heading": "Practice Rooms:", "note": "Students enrolled in MUAP classes may be given access to on-campus practice rooms. Visit https://lonestar.edu/31405.htm for resources, including a link to the current Practice Room Agreement."}
+    ]
+  elif re.search("MUEN", selected_course_name):
+    custom_policies = [
+    {"heading": "Music AA and Field of Study:", "note": "All MUEN courses can be used toward the elective credit in the degree plan, but only three courses count toward the required four semesters of large ensemble: Symphonic Band (MUEN 2124), Concert Choir (MUEN 1141), and Symphony Orchestra (MUEN 1123). Jazz Ensemble (MUEN 1127) may also be used, but only by guitar/bass majors. To see a complete list of courses that apply toward the Associate of Arts (AA) in Music and Field of Study in Music, please visit https://lonestar.edu/programs-of-study/associate-of-arts-music.htm . You can also find a one- page check list at https://lonestar.edu/music-dept-universitypark.htm . It is recommended that you meet with the Department Chair (Dr. Aaron Alon: Aaron.Alon@lonestar.edu) to help you plan your courses if you are planning to pursue an associate or bachelor’s degree in music."},
+    {"heading": "Events and Auditions:", "note": "Please visit https://lonestar.edu/UP-Events  for a list of music, theatre, and visual art events on the Lone Star College-University Park campus.  For music and theatre auditions, please visit https://lonestar.edu/UP-Auditions  for information or to schedule an audition time."},
+    {"heading": "Music Website", "note": "Visit https://lonestar.edu/UPMusic  to learn more about the music department at Lone Star College-University Park."},
+    {"heading": "MUAP Private Instruction:", "note": "Enrollment in this course satisfies the corequisite requirement for enrollment in private lessons in voice, instruments, and/or composition. You can learn more and request information at https://lonestar.edu/UP-MUAP  or by emailing aaron.alon@lonestar.edu. Students may enroll in lessons through the end of week 2 in the fall or spring semesters. Sign up to audition for private lessons at https://lonestar.edu/UP-Auditions ."},
+    {"heading": "Practice Rooms:", "note": "Students enrolled in MUEN classes may be given access to on-campus practice rooms. Visit https://lonestar.edu/31405.htm for resources, including a link to the current Practice Room Agreement."},
+    {"heading": "Concert Setup and Teardown:", "note": "All ensemble members are required to assist with setup and/or teardown for the final rehearsal and for the performance. Not participating in concert setup and teardown will result in a lowered course grade. If you have disabilities or physical limitations, please work on these with the ensemble director to find work that you can safely do to assist."}
+    ]
+  elif re.search("MUSC", selected_course_name):
+    custom_policies = [
+    {"heading": "Events and Auditions:", "note": "Please visit https://lonestar.edu/UP-Events  for a list of music, theatre, and visual art events on the Lone Star College-University Park campus.  For music and theatre auditions, please visit https://lonestar.edu/UP-Auditions  for information or to schedule an audition time."},
+    {"heading": "Music Website:", "note": "Visit https://lonestar.edu/UPMusic  to learn more about the music department at Lone Star College-University Park."},
+    {"heading": "Degree Applicability:", "note": "This is a non-transferable workforce course. It does not count toward the AA in Music."},
+    {"heading": "Music AA and Field of Study:", "note": "To see a complete list of courses that apply toward the Associate of Arts (AA) in Music and Field of Study in Music, please visit https://lonestar.edu/programs-of-study/associate-of-arts-music.htm . You can also find a one- page check list at https://lonestar.edu/music-dept-universitypark.htm . It is recommended that you meet with the Department Chair (Dr. Aaron Alon: Aaron.Alon@lonestar.edu) to help you plan your courses if you are planning to pursue an associate or bachelor’s degree in music."},
+    {"heading": "Practice Rooms:", "note": "Students enrolled in certain music classes may be given access to on-campus practice rooms. Visit https://www.lonestar.edu/31405.htm  for resources, including a link to the current Practice Room Agreement. Students enrolled only in core music classes (MUSI 1306, 1307, or 1310) are ineligible to use practice rooms."}
+  ]
+  elif re.search("MUSI", selected_course_name):
+    custom_policies = [
+    {"heading": "Events and Auditions:", "note": "Please visit https://lonestar.edu/UP-Events  for a list of music, theatre, and visual art events on the Lone Star College-University Park campus.  For music and theatre auditions, please visit https://lonestar.edu/UP-Auditions  for information or to schedule an audition time."},
+    {"heading": "Music Website:", "note": "Visit https://lonestar.edu/UPMusic  to learn more about the music department at Lone Star College-University Park."},
+    {"heading": "Music AA and Field of Study:", "note": "To see a complete list of courses that apply toward the Associate of Arts (AA) in Music and Field of Study in Music, please visit https://lonestar.edu/programs-of-study/associate-of-arts-music.htm . You can also find a one- page check list at https://www.lonestar.edu/music-dept-universitypark.htm . It is recommended that you meet with the Department Chair (Dr. Aaron Alon: Aaron.Alon@lonestar.edu) to help you plan your courses if you are planning to pursue an associate or bachelor’s degree in music."},
+    {"heading": "MUAP Private Instruction:", "note": "Enrollment in this course satisfies the corequisite requirement for enrollment in private lessons in voice, instruments, and/or composition. You can learn more and request information at https://lonestar.edu/UP-MUAP or by emailing aaron.alon@lonestar.edu. Students may enroll in lessons through the end of week 2 in the fall or spring semesters. Sign up to audition for private lessons at https://lonestar.edu/UP-Auditions ."},
+    {"heading": "Practice Rooms:", "note": "Students enrolled in certain music classes may be given access to on-campus practice rooms. Visit https://lonestar.edu/31405.htm  for resources, including a link to the current Practice Room Agreement. Students enrolled only in core music classes (MUSI 1306, 1307, or 1310) are ineligible to use practice rooms."}
+  ]
+  else:
+    custom_policies = None
+---
+mandatory: True
+code: |
+  if custom_policies:
+    for item in custom_policies:
+      list_item = add_ins.appendObject()
+      list_item.add_ins_heading = item['heading']
+      list_item.add_ins_note = item['note']
+    add_ins.gathered = True
+---
+question: Do you want to add any additional policies or information?
+yesno: add_ins.there_are_any
+---
+question: Do you want to add another?
+yesno: add_ins.there_is_another
+---
+event: 'add_ins[i].review'
+question: Edit your entry
+review:
+  - Heading: 'add_ins[i].add_ins_heading'
+    button: '**Heading**: ${ add_ins[i].add_ins_heading }'
+  - Policy or Note: 'add_ins[i].add_ins_note'
+    button: '**Policy or Note**: ${ add_ins[i].add_ins_note }'
+right: |
+
+  ${ selected_course } ${ selected_course.title }
+
+  **Official Day:** ${ official_day }
+
+  **Withdrawal Day:** ${ withdrawal_day }
+---
+code: add_ins.remove(value(action_argument('item')))
+event: add_ins_del
+---
+objects:
+  - add_ins: DAList.using(object_type=DAObject)
+---
+id: add_ins
+code: add_ins.complete_attribute = 'add_ins_heading'
+mandatory: True
+---
+question: Do you want to add any additional policies or information?
+yesno: add_ins.there_are_any
+---
+id: edit_add_ins
+question: Additional Policies and Notes for ${ selected_course } ${ selected_course.title }.
+continue button label: Save & Continue
+fields:
+  - Heading: 'add_ins[i].add_ins_heading'
+    datatype: text
+  - Policy or Note: 'add_ins[i].add_ins_note'
+    datatype: area
+    rows: 10
+list collect: True
+right: |
+
+  ${ selected_course } ${ selected_course.title }
+
+  **Official Day:** ${ official_day }
+
+  **Withdrawal Day:** ${ withdrawal_day }
+---
+question: Do you want to add another?
+yesno: add_ins.there_is_another
+---
+event: 'add_ins[i].review'
+question: Edit your entry
+review:
+  - Heading: 'add_ins[i].add_ins_heading'
+    button: '**Heading**: ${ add_ins[i].add_ins_heading }'
+  - Policy or Note: 'add_ins[i].add_ins_note'
+    button: '**Policy or Note**: ${ add_ins[i].add_ins_note }'
+---
+code: add_ins.remove(value(action_argument('item')))
+event: add_ins_del
+---
+code: |-
+  add_ins.appendObject()
+  add_ins.reset_gathered()
+  add_ins.there_is_another = False
+event: add_ins_add
+---
+columns:
+  - Heading: row_item.add_ins_heading
+  - Policy or Note: row_item.add_ins_note
+edit:
+  - add_ins_heading
+  - add_ins_note
+rows: add_ins
+table: add_ins_table
+---
+mandatory: True
+question: Please review additional policies and notes for ${ selected_course } ${ selected_course.title }
+subquestion: |-
+  ${ add_ins_table }
+  ${ add_ins.add_action() }
+buttons:
+  Save & Continue: continue
+progress: 99
+---
+event: review_answers
+question: |
+  Revisit questions for ${ selected_course } ${ selected_course.title }
+subquestion: |
+  These are the questions you have
+  answered. Click to revisit.
+
+review:
+  - note: |
+      ###Course Catalog###
+  - Description: selected_course.description
+    button: |
+      **Your data:** ${ selected_course.description }
+  - Prerequisite: selected_course.prerequisite
+    button: |
+      **Your data:** ${ selected_course.prerequisite }
+  - Corequisite: selected_course.corequisite
+    button: |
+      **Your data:** ${ selected_course.corequisite }
+  - Prerequisite / Corequisite: selected_course.prerequisite_corequisite
+    button: |
+      **Your data:** ${ selected_course.prerequisite_corequisite }
+  - Units: selected_course.units
+    button: |
+      **Your data:** ${ selected_course.prerequisite_corequisite }
+  - Lecture Hours: selected_course.lecture
+    button: |
+      **Your data:** ${ selected_course.lecture }
+  - Lab Hours: selected_course.lab
+    button: |
+      **Your data:** ${ selected_course.lab }
+  - External Hours: selected_course.external
+    button: |
+      **Your data:** ${ selected_course.external }
+  - Contact Hours: selected_course.contact
+    button: |
+      **Your data:** ${ selected_course.contact }
+  - Student Learning Outcomes: selected_course.outcomes
+    button: |
+      **Your data:** ${ selected_course.outcomes }
+  - Core Applicability: core_applicability
+    button: |
+      **Your data:** ${ core_applicability }
+  - note: |
+      ###Division / Department###
+    show if: division
+  - Division: division
+    button: |
+      **Your data:** ${ division }
+  - Department: department
+    button: |
+      **Your data:** ${ department }
+  - note: |
+      ###Required Material###
+      ${ required_table }
+      ${ required.add_action() }
+  - note: |
+      ###Optional Material###
+      ${ optional_table }
+      ${ optional.add_action() }
+  - note: |
+      ###Grade Determination###
+      ${ grade_determination_table }
+      ${ grade_determination.add_action() }
+  - note: |
+      ###Grade Scale###
+    show if: a_points
+  - A (percent): a_letter_grade
+    button: |
+      **Your data:** ${ a_letter_grade }
+  - A (points): a_points
+    button: |
+      **Your data:** ${ a_points }
+  - B (percent): b_letter_grade
+    button: |
+      **Your data:** ${ b_letter_grade }
+  - B (points): b_points
+    button: |
+      **Your data:** ${ b_points }
+  - C (percent): c_letter_grade
+    button: |
+      **Your data:** ${ c_letter_grade }
+  - C (points): c_points
+    button: |
+      **Your data:** ${ c_points }
+  - D (percent): d_letter_grade
+    button: |
+      **Your data:** ${ d_letter_grade }
+  - D (points): d_points
+    button: |
+      **Your data:** ${ d_points }
+  - F (percent): f_letter_grade
+    button: |
+      **Your data:** ${ f_letter_grade }
+  - F (points): f_points
+    button: |
+      **Your data:** ${ f_points }
+  - note: |
+      ###Scheduled Dates###
+    show if: activities
+  - Edit or Add Scheduled Activities: activities.revisit
+    button: |
+      ${ activities_table.show(editable=False) }
+  - Course Session: session
+    button: |
+      ${ session }
+  - Course Meet Days: select_days
+    button: |
+      ${ select_days.true_values() }
+  - note: |
+      [Click to generate new Scheduled Dates - THIS WILL DELETE ALL DATE DESCRIPTIONS AND ASSIGNMENTS](${ url_action('generate_dates') })
+    show if: activities
+  - note: |
+      ###Instructor Info###
+    show if: instructor_name
+  - Name: instructor_name
+    button: |
+      **Your data:** ${ instructor_name }
+  - Email: instructor_email
+    button: |
+      **Your data:** ${ instructor_email }
+  - Phone: instructor_phone
+    button: |
+      **Your data:** ${ instructor_phone }
+  - Website/Other: other_contact
+    button: |
+      **Your data:** ${ other_contact }
+  - Office Location: instructor_office
+    button: |
+      **Your data:** ${ instructor_office }
+  - Student Hours: instructor_hours
+    button: |
+      **Your data:** ${ instructor_hours }
+  - note: |
+      ###Section Info###
+    show if: section_number
+  - Section: section_number
+    button: |
+      **Your data:** ${ section_number}
+  - Classroom: classroom_location
+    button: |
+      **Your data:** ${ classroom_location }
+  - Labroom: labroom_location
+    button: |
+      **Your data:** ${ labroom_location }
+  - Semester and Year: semester
+    button: |
+      **Your data:** ${ semester }
+  - Class Days and Times: days_times
+    button: |
+      **Your data:** ${ days_times }
+  - note: |
+      ###Required Policies###
+    show if: technology_policy
+  - Technology: technology_policy
+    button: |
+      **Your data:** ${ technology_policy }
+  - Attendance: attendance_policy
+    button: |
+      **Your data:** ${ attendance_policy }
+  - Late Work: late_policy
+    button: |
+      **Your data:** ${ late_policy }
+  - Make-Up: makeup_policy
+    button: |
+      **Your data:** ${ makeup_policy }
+  - Phone: phone_policy
+    button: |
+      **Your data:** ${ phone_policy }
+  - Official Day: official_day_policy
+    button: |
+      **Your data:** ${ official_day_policy }
+  - Withdrawal: withdrawal_policy
+    button: |
+      **Your data:** ${ withdrawal_policy }
+  - note: |
+      ###Additional Policies###
+      ${ add_ins_table }
+      ${ add_ins.add_action() }
+---
+mandatory: True
+code: |
+  set_parts(
+    subtitle=section_number)
+---
+mandatory: True
+section: Document Download
+question: |
+  Here is your document.
+subquestion: |
+  You may review and edit your data by selecting 'Review Answers' in the menu, (click your username in the toolbar.)
+  To start a new syllabus, please select 'Available Interviews' from the menu.
+attachment:
+  name: ${ selected_course }_${ instructor_name }_${ semester }
+  filename: ${ selected_course }_${ instructor_name }_${ semester }
+  docx template file: su21template_fields.docx
+  valid formats:
+    - pdf
+    - docx
+right: |
+  ###Have feedback? Or, a feature request?
+  **[Click here for feedback](https://lscup.documate.org/interview?i=docassemble.playground2%3AFeature+or+Document+Request.yml#page1)**
+
+  See this video for editing / updating your course data.
+  [YOUTUBE lHzFFtv2tQ4]
+---
